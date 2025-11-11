@@ -1,0 +1,46 @@
+﻿Steps to Upload the Code:
+To upload this code to an ESP32 board, you'll need the Arduino IDE. If you don't have it, download and install it from the official Arduino website.
+
+1. Install Arduino IDE and ESP32 Support:
+* Open Arduino IDE.
+* Go to File > Preferences.
+* In the "Additional Boards Manager URLs" field, add: https://dl.espressif.com/dl/package_esp32_index.json.
+* Go to Tools > Board > Boards Manager, search for "ESP32", and install the "ESP32 by Espressif Systems" package.
+
+
+2.  Prepare Your Hardware:
+* Connect your ESP32 board to your computer via USB.
+* Wire your components:
+* MQ2 sensor: Analog output to ESP32 pin 34 (GND and VCC to appropriate power).
+* Buzzer: Positive to ESP32 pin 12, negative to GND (add a resistor if needed).
+* Ensure your WiFi network is available and you have your Telegram bot token and chat ID ready.
+
+
+3.  Set Up the Code:
+* Open a new sketch in Arduino IDE.
+* Copy-paste the provided code into the sketch.
+* Replace the placeholders:
+* ssid and password with your WiFi details.
+* botToken with your Telegram bot token (get from BotFather).
+* chatID with your Telegram chat ID (e.g., send a message to your bot and check the API response or use a tool like @userinfobot).
+* Save the sketch (e.g., as "GasDetector.ino").
+
+
+4.  Select Board and Port:
+* Go to Tools > Board and select your ESP32 model (e.g., "ESP32 Dev Module" if unsure).
+* Go to Tools > Port and select the COM port your ESP32 is connected to (it should appear as something like "COM3" or "/dev/ttyUSB0").
+
+
+5.  Upload the Code:
+* Click the Upload button (right arrow icon) in Arduino IDE.
+* The IDE will compile and upload the code. Watch the status bar for progress.
+* If you see errors (e.g., about libraries), ensure ESP32 support is installed and try restarting the IDE.
+
+
+6.  Test and Monitor:
+* Open the Serial Monitor (Tools > Serial Monitor) and set baud rate to 115200.
+* Power on the ESP32. It will calibrate for 30 seconds (watch Serial output), then start monitoring.
+* Expose the MQ2 sensor to gas (safely, e.g., near a lighter) to test alerts. Check your Telegram chat for messages and listen for the buzzer.
+* If issues arise (e.g., WiFi connection fails), double-check credentials and network.
+
+

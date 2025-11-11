@@ -1,0 +1,102 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+// WiFi credentials
+const char* ssid = "----------"; // Fill in your WiFi SSID
+const char* password = "----------"; // Fill in your WiFi password
+
+// Telegram bot details
+const char* botToken = "----------"; // Fill in your Telegram bot token
+const char* chatID = "----------";  // Fill in your Telegram chat ID
+
+// MQ2 sensor pin
+const int mq2Pin = 34;  // Analog input pin
+const unsigned long alertDelay = 10000;  // Alert delay in milliseconds
+
+// Buzzer pin
+const int buzzerPin = 12;  // Digital output pin for buzzer
+
+// Calibration variables
+const int calibrationDuration = 30000;  // 30 seconds
+int threshold = 500;  // Initial (will be updated)
+bool isCalibrating = true;
+int calReadings[30];
+int calCount = 0;
+long calSum = 0;
+int cleanAirAvg = 0;
+
+unsigned long lastAlertTime = 0;
+unsigned long calStartTime = 0;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(mq2Pin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  digitalWrite(buzzerPin, LOW);
+
+  calStartTime = millis();
+
+  // Connect to WiFi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+}
+
+void loop() {
+  int sensorValue = analogRead(mq2Pin);
+
+  if (isCalibrating) {
+    if (millis() - calStartTime < calibrationDuration) {
+      calReadings[calCount] = sensorValue;
+      calSum += sensorValue;
+      calCount++;
+      Serial.print("Calibrating... Reading ");
+      Serial.print(calCount);
+      Serial.print(": ");
+      Serial.println(sensorValue);
+      delay(1000);
+      return;
+    } else {
+      cleanAirAvg = calSum / calCount;
+      threshold = cleanAirAvg + 100;  // Set threshold above clean air
+      isCalibrating = false;
+      Serial.print("Calibration done. Clean air avg: ");
+      Serial.print(cleanAirAvg);
+      Serial.print(", Threshold: ");
+      Serial.println(threshold);
+    }
+  } else {
+    Serial.print("MQ2 Value: ");
+    Serial.println(sensorValue);
+
+    if (sensorValue > threshold) {
+      digitalWrite(buzzerPin, HIGH);
+      if (millis() - lastAlertTime > alertDelay) {
+        sendTelegramMessage("Gas detected! Value: " + String(sensorValue) + " (Threshold: " + String(threshold) + ")");
+        lastAlertTime = millis();
+      }
+    } else {
+      digitalWrite(buzzerPin, LOW);
+    }
+
+    delay(1000);
+  }
+}
+
+void sendTelegramMessage(String message) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = "https://api.telegram.org/bot" + String(botToken) + "/sendMessage?chat_id=" + String(chatID) + "&text=" + message;
+    http.begin(url);
+    int httpResponseCode = http.GET();
+    if (httpResponseCode > 0) {
+      Serial.println("Message sent");
+    } else {
+      Serial.println("Error sending message");
+    }
+    http.end();
+  }
+}

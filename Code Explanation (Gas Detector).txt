@@ -1,0 +1,82 @@
+﻿Code Explanation
+Here's a breakdown of the key sections:
+
+Includes and Constants:
+
+* #include <wifi.h> and #include #include <WiFi.h> and #include <HTTPClient.h>: These are libraries for WiFi connectivity and HTTP requests (needed for Telegram API calls). They come pre-installed with ESP32 board support in the Arduino IDE.: These are libraries for WiFi connectivity and HTTP requests (needed for Telegram API calls). They come pre-installed with ESP32 board support in the Arduino IDE.
+
+* WiFi credentials (ssid, password): Replace the placeholders with your WiFi network name and password.
+
+* Telegram details (botToken, chatID): These are for your Telegram bot. You need to create a bot via BotFather on Telegram and get its token, plus your chat ID (from a bot like @userinfobot or by checking API responses).
+
+* Sensor and buzzer pins: MQ2 is connected to analog pin 34 (for reading gas levels), buzzer to digital pin 12.
+
+* alertDelay: 10 seconds between Telegram alerts to avoid spamming.
+
+* Calibration variables: The code calibrates for 30 seconds by taking 30 readings (one per second) and averaging them to set a "clean air" baseline. The threshold is set 100 units above this average (adjustable based on your sensor).
+
+
+Setup Function:
+
+* Initializes serial communication (for debugging via Serial Monitor at 115200 baud).
+
+* Sets MQ2 pin as input and buzzer pin as output (initially off).
+
+* Starts calibration timer.
+
+* Connects to WiFi and waits until connected, printing status to Serial.
+
+
+Loop Function:
+
+* Calibration Phase (runs for 30 seconds after startup):
+
+* Reads the MQ2 sensor value every second.
+
+* Stores readings in an array, sums them, and counts them.
+
+* After 30 seconds, calculates the average (cleanAirAvg) and sets threshold = cleanAirAvg + 100.
+
+* Prints calibration progress and final values to Serial.
+
+
+Monitoring Phase (after calibration):
+
+* Continuously reads the MQ2 sensor value every second.
+
+* Prints the value to Serial.
+
+
+* If the value exceeds the threshold:
+
+* Turns on the buzzer (HIGH).
+
+* Sends a Telegram message if at least 10 seconds have passed since the last alert (to prevent flooding).
+
+* If below threshold, turns off the buzzer.
+
+* The loop repeats every 1 second.
+
+
+Send Telegram Message Function:
+
+* Checks if WiFi is connected.
+
+* Uses HTTPClient to send a GET request to the Telegram API endpoint: https://api.telegram.org/bot{token}/sendMessage?chat_id={chatID}&text={message}.
+
+* The message includes the sensor value and threshold.
+
+* Prints success or error to Serial.
+
+
+Notes on the Code:
+
+* Sensor Calibration: The MQ2 sensor needs time to warm up (about 1-2 minutes in real use), and calibration assumes clean air. If your environment has baseline gas, adjust the threshold offset (e.g., change +100).
+
+* Power and Wiring: Ensure the ESP32 is powered properly (e.g., via USB or battery). MQ2 typically needs 5V, so use a voltage divider if your ESP32 pin is 3.3V. Buzzer should be connected via a transistor or resistor to avoid overloading the pin.
+
+* Error Handling: The code doesn't handle WiFi disconnections mid-operation—add retries if needed for robustness.
+
+* Security: Hardcoding credentials is fine for prototyping, but for production, use secure storage.
+
+* Dependencies: No external libraries beyond what's included; ensure ESP32 board support is installed in Arduino IDE.
